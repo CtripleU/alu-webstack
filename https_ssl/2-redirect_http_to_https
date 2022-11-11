@@ -32,23 +32,24 @@ defaults
         errorfile 502 /etc/haproxy/errors/502.http
         errorfile 503 /etc/haproxy/errors/503.http
         errorfile 504 /etc/haproxy/errors/504.http
-backend web-backend
-        redirect scheme https if !{ ssl_fc }
-        balance roundrobin
-        server 4812-web-01 34.234.90.21:80 check
-        server 4812-web-02 52.91.90.202:80 check
-
-backend letsencrypt-backend
-        server letsencrypt 127.0.0.1:54321
 
 frontend www-http
         bind *:80
         mode http
         default_backend web-backend
 
-frontend www.cumi.tech
+frontend www-https
         bind *:443 ssl crt /etc/haproxy/certs/cumi.tech.pem
         http-request set-header X-Forwarded-Proto https
         acl letsencrypt-acl path_beg /.well-known/acme-challenge/
         use_backend letsencrypt-backend if letsencrypt-acl
         default_backend web-backend
+
+backend www-backend
+        balance roundrobin
+        redirect scheme https if !{ ssl_fc }
+        server 4812-web-01 34.234.90.21:80 check
+        server 4812-web-02 52.91.90.202:80 check
+
+backend letsencrypt-backend
+        server letsencrypt 127.0.0.1:54321
